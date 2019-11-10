@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"github.com/peterhellberg/link"
 )
 
 const (
@@ -449,4 +450,77 @@ func (c *Client) Put(path string, data, resource interface{}) error {
 // Delete performs a DELETE request for the given path
 func (c *Client) Delete(path string) error {
 	return c.CreateAndDo("DELETE", path, nil, nil, nil)
+}
+
+func (c *Client) CreateAndDoMeta(method, path string, data, options, resource interface{}) (*ResponseMeta, error) {
+	req, err := c.NewRequest(method, path, data, options)
+	if err != nil {
+		return nil, err
+	}
+
+	meta, err := c.DoPaging(req, resource)
+	if err != nil {
+		return meta, err
+	}
+
+	return meta, nil
+}
+
+// GetPaging performs a GET request for the given path and saves the result in the
+// given resource.
+func (c *Client) GetPaging(path string, resource, options interface{}) (*ResponseMeta, error) {
+	return c.CreateAndDoMeta("GET", path, nil, options, resource)
+}
+
+// Do sends an API request and populates the given interface with the parsed
+// response. It does not make much sense to call Do without a prepared
+// interface instance.
+func (c *Client) DoPaging(req *http.Request, v interface{}) (*ResponseMeta, error) {
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = CheckResponseError(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if v != nil {
+		decoder := json.NewDecoder(resp.Body)
+		err := decoder.Decode(&v)
+		if err != nil {
+			return nil, err
+		}
+	}
+	meta := new(ResponseMeta)
+	meta.ApiLimit = resp.Header.Get("X-Shopify-Shop-Api-Call-Limit")
+
+	links := link.ParseHeader(resp.Header)
+	for key, link := range links {
+		if key == "next" {
+			parsedUrl, err := url.Parse(link.URI)
+			if err != nil {
+				return nil, err
+			}
+			values, ok := parsedUrl.Query()["page_info"]
+			if ok && len(values) >= 1 {
+				meta.NextPageInfo = values[0]
+			}
+
+		}
+		if key == "last" {
+			parsedUrl, err := url.Parse(link.URI)
+			if err != nil {
+				return nil, err
+			}
+			values, ok := parsedUrl.Query()["page_info"]
+			if ok && len(values) >= 1 {
+				meta.LastPageInfo = values[0]
+			}
+		}
+	}
+
+	return meta, nil
 }
