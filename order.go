@@ -15,6 +15,7 @@ const ordersResourceName = "orders"
 // See: https://help.shopify.com/api/reference/order
 type OrderService interface {
 	List(interface{}) ([]Order, error)
+	ListPage(interface{}) ([]Order, *ResponseMeta, error)
 	Count(interface{}) (int, error)
 	Get(int64, interface{}) (*Order, error)
 	Create(Order) (*Order, error)
@@ -36,6 +37,7 @@ type OrderServiceOp struct {
 // A struct for all available order count options
 type OrderCountOptions struct {
 	Page              int       `url:"page,omitempty"`
+	PageInfo          string    `url:"page_info,omitempty"`
 	Limit             int       `url:"limit,omitempty"`
 	SinceID           int64     `url:"since_id,omitempty"`
 	CreatedAtMin      time.Time `url:"created_at_min,omitempty"`
@@ -53,6 +55,7 @@ type OrderCountOptions struct {
 // See: https://help.shopify.com/api/reference/order#index
 type OrderListOptions struct {
 	Page              int       `url:"page,omitempty"`
+	PageInfo          string    `url:"page_info,omitempty"`
 	Limit             int       `url:"limit,omitempty"`
 	SinceID           int64     `url:"since_id,omitempty"`
 	Status            string    `url:"status,omitempty"`
@@ -291,6 +294,14 @@ func (s *OrderServiceOp) List(options interface{}) ([]Order, error) {
 	resource := new(OrdersResource)
 	err := s.client.Get(path, resource, options)
 	return resource.Orders, err
+}
+
+// ListPage List orders - paging enabled
+func (s *OrderServiceOp) ListPage(options interface{}) ([]Order, *ResponseMeta, error) {
+	path := fmt.Sprintf("%s/%s.json", globalApiPathPrefix, ordersBasePath)
+	resource := new(OrdersResource)
+	meta, err := s.client.GetPaging(path, resource, options)
+	return resource.Orders, meta, err
 }
 
 // Count orders

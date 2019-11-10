@@ -375,8 +375,16 @@ func CheckResponseError(r *http.Response) error {
 	return wrapSpecificError(r, responseError)
 }
 
+// ResponseMeta contains information on paging and other meta data for a request.
+type ResponseMeta struct {
+	NextPageInfo string
+	LastPageInfo string
+	ApiLimit     string
+}
+
 // General list options that can be used for most collections of entities.
 type ListOptions struct {
+	PageInfo     string    `url:"page_info,omitempty"`
 	Page         int       `url:"page,omitempty"`
 	Limit        int       `url:"limit,omitempty"`
 	SinceID      int64     `url:"since_id,omitempty"`
@@ -496,7 +504,6 @@ func (c *Client) DoPaging(req *http.Request, v interface{}) (*ResponseMeta, erro
 	}
 	meta := new(ResponseMeta)
 	meta.ApiLimit = resp.Header.Get("X-Shopify-Shop-Api-Call-Limit")
-
 	links := link.ParseHeader(resp.Header)
 	for key, link := range links {
 		if key == "next" {
