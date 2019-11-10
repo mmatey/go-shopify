@@ -7,11 +7,11 @@ The new home of Conversio's Shopify Go library.
 <!-- [![Build Status](https://travis-ci.org/bold-commerce/go-shopify.svg?branch=master)](https://travis-ci.org/bold-commerce/go-shopify) -->
 [![codecov](https://codecov.io/gh/bold-commerce/go-shopify/branch/master/graph/badge.svg)](https://codecov.io/gh/bold-commerce/go-shopify) 
 <!-- [![Join the chat at https://gitter.im/bold-commerce/go-shopify](https://badges.gitter.im/bold-commerce/go-shopify.svg)](https://gitter.im/bold-commerce/go-shopify?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) -->
-[![Documentation](https://godoc.org/github.com/mmatey/go-shopify?status.svg)](http://godoc.org/ggithub.com/mmatey/go-shopify)
+[![Documentation](https://godoc.org/github.com/mmatey/go-shopify?status.svg)](http://godoc.org/sgithub.com/mmatey/go-shopify)
 ## Install
 
 ```console
-$ go get github.com/bold-commerce/go-shopify
+$ go get github.com/mmatey/go-shopify
 ```
 
 ## Use
@@ -40,7 +40,8 @@ app := goshopify.App{
 // In some request handler, you probably want something like this:
 func MyHandler(w http.ResponseWriter, r *http.Request) {
     shopName := r.URL.Query().Get("shop")
-    authUrl := app.AuthorizeURL(shopName)
+    state := "random string"
+    authUrl := app.AuthorizeURL(shopName, state)
     http.Redirect(w, r, authUrl, http.StatusFound)
 }
 
