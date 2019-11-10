@@ -1,4 +1,4 @@
-package shopify
+package goshopify
 
 // GDPRCustomer contains the customer's information for the redaction.
 type GDPRCustomer struct {
