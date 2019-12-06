@@ -13,6 +13,7 @@ const productsResourceName = "products"
 // See: https://help.shopify.com/api/reference/product
 type ProductService interface {
 	List(interface{}) ([]Product, error)
+	ListPage(interface{}) ([]Product, *ResponseMeta, error)
 	Count(interface{}) (int, error)
 	Get(int64, interface{}) (*Product, error)
 	Create(Product) (*Product, error)
@@ -78,6 +79,14 @@ func (s *ProductServiceOp) List(options interface{}) ([]Product, error) {
 	resource := new(ProductsResource)
 	err := s.client.Get(path, resource, options)
 	return resource.Products, err
+}
+
+// ListPage List products - paging enabled
+func (s *ProductServiceOp) ListPage(options interface{}) ([]Product, *ResponseMeta, error) {
+	path := fmt.Sprintf("%s/%s.json", globalApiPathPrefix, productsBasePath)
+	resource := new(ProductsResource)
+	meta, err := s.client.GetPaging(path, resource, options)
+	return resource.Products, meta, err
 }
 
 // Count products

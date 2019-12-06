@@ -14,6 +14,7 @@ const inventoryItemsBasePath = "inventory_items"
 // See https://help.shopify.com/en/api/reference/inventory/inventoryitem
 type InventoryItemService interface {
 	List(interface{}) ([]InventoryItem, error)
+	ListPage(interface{}) ([]InventoryItem, *ResponseMeta, error)
 	Get(int64, interface{}) (*InventoryItem, error)
 	Update(InventoryItem) (*InventoryItem, error)
 }
@@ -50,6 +51,14 @@ func (s *InventoryItemServiceOp) List(options interface{}) ([]InventoryItem, err
 	resource := new(InventoryItemsResource)
 	err := s.client.Get(path, resource, options)
 	return resource.InventoryItems, err
+}
+
+// ListPage List inventory items - paging enabled
+func (s *InventoryItemServiceOp) ListPage(options interface{}) ([]InventoryItem, *ResponseMeta, error) {
+	path := fmt.Sprintf("%s/%s.json", globalApiPathPrefix, inventoryItemsBasePath)
+	resource := new(InventoryItemsResource)
+	meta, err := s.client.GetPaging(path, resource, options)
+	return resource.InventoryItems, meta, err
 }
 
 // Get a inventory item

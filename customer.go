@@ -15,6 +15,7 @@ const customersResourceName = "customers"
 // See: https://help.shopify.com/api/reference/customer
 type CustomerService interface {
 	List(interface{}) ([]Customer, error)
+	ListPage(interface{}) ([]Customer, *ResponseMeta, error)
 	Count(interface{}) (int, error)
 	Get(int64, interface{}) (*Customer, error)
 	Search(interface{}) ([]Customer, error)
@@ -76,11 +77,12 @@ type CustomerTagsResource struct {
 
 // Represents the options available when searching for a customer
 type CustomerSearchOptions struct {
-	Page   int    `url:"page,omitempty"`
-	Limit  int    `url:"limit,omitempty"`
-	Fields string `url:"fields,omitempty"`
-	Order  string `url:"order,omitempty"`
-	Query  string `url:"query,omitempty"`
+	Page     int    `url:"page,omitempty"`
+	PageInfo string `url:"page_info,omitempty"`
+	Limit    int    `url:"limit,omitempty"`
+	Fields   string `url:"fields,omitempty"`
+	Order    string `url:"order,omitempty"`
+	Query    string `url:"query,omitempty"`
 }
 
 // List customers
@@ -89,6 +91,14 @@ func (s *CustomerServiceOp) List(options interface{}) ([]Customer, error) {
 	resource := new(CustomersResource)
 	err := s.client.Get(path, resource, options)
 	return resource.Customers, err
+}
+
+// ListPage List customers - paging enabled
+func (s *CustomerServiceOp) ListPage(options interface{}) ([]Customer, *ResponseMeta, error) {
+	path := fmt.Sprintf("%s/%s.json", globalApiPathPrefix, customersBasePath)
+	resource := new(CustomersResource)
+	meta, err := s.client.GetPaging(path, resource, options)
+	return resource.Customers, meta, err
 }
 
 // Count customers

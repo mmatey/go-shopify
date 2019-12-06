@@ -384,8 +384,8 @@ type ResponseMeta struct {
 
 // General list options that can be used for most collections of entities.
 type ListOptions struct {
-	PageInfo     string    `url:"page_info,omitempty"`
 	Page         int       `url:"page,omitempty"`
+	PageInfo     string    `url:"page_info,omitempty"`
 	Limit        int       `url:"limit,omitempty"`
 	SinceID      int64     `url:"since_id,omitempty"`
 	CreatedAtMin time.Time `url:"created_at_min,omitempty"`
