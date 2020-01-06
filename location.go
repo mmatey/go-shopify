@@ -13,6 +13,8 @@ const locationsBasePath = "locations"
 type LocationService interface {
 	// Retrieves a list of locations
 	List(options interface{}) ([]Location, error)
+	// Retrieves a list of locations - paging
+	ListPage(interface{}) ([]Location, *ResponseMeta, error)
 	// Retrieves a single location by its ID
 	Get(ID int64, options interface{}) (*Location, error)
 	// Retrieves a count of locations
@@ -85,6 +87,13 @@ func (s *LocationServiceOp) List(options interface{}) ([]Location, error) {
 	resource := new(LocationsResource)
 	err := s.client.Get(path, resource, options)
 	return resource.Locations, err
+}
+
+func (s *LocationServiceOp) ListPage(options interface{}) ([]Location, *ResponseMeta, error) {
+	path := fmt.Sprintf("%s/%s.json", globalApiPathPrefix, locationsBasePath)
+	resource := new(LocationsResource)
+	meta, err := s.client.GetPaging(path, resource, options)
+	return resource.Locations, meta, err
 }
 
 func (s *LocationServiceOp) Get(ID int64, options interface{}) (*Location, error) {

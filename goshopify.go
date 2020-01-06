@@ -82,6 +82,7 @@ type Client struct {
 	Location                   LocationService
 	DiscountCode               DiscountCodeService
 	InventoryItem              InventoryItemService
+	InventoryLevel             InventoryLevelService
 }
 
 // A general response error that follows a similar layout to Shopify's response
@@ -239,7 +240,7 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 	c.Location = &LocationServiceOp{client: c}
 	c.DiscountCode = &DiscountCodeServiceOp{client: c}
 	c.InventoryItem = &InventoryItemServiceOp{client: c}
-
+	c.InventoryLevel = &InventoryLevelServiceOp{client: c}
 	// apply any options
 	for _, opt := range opts {
 		opt(c)
