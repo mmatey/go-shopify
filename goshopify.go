@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -45,6 +46,9 @@ type Client struct {
 
 	// App settings
 	app App
+
+	// number of attempts for retrying on 429 errors.
+	MaxRetryAttempts int
 
 	// Base URL for API requests.
 	// This is set on a per-store basis which means that each store must have
@@ -196,6 +200,13 @@ func WithVersion(apiVersion string) Option {
 	}
 }
 
+// WithMaxRetries optionally sets max retry attempts. Default retry attempts is 3.
+func WithMaxRetries(maxAttempts int) Option {
+	return func(c *Client) {
+		c.MaxRetryAttempts = maxAttempts
+	}
+}
+
 // NewClient returns a new Shopify API client with an already authenticated shopname and
 // token. The shopName parameter is the shop's myshopify domain,
 // e.g. "theshop.myshopify.com", or simply "theshop"
@@ -242,6 +253,8 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 	c.InventoryItem = &InventoryItemServiceOp{client: c}
 	c.InventoryLevel = &InventoryLevelServiceOp{client: c}
 	// apply any options
+
+	c.MaxRetryAttempts = 3
 	for _, opt := range opts {
 		opt(c)
 	}
@@ -253,26 +266,37 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 // response. It does not make much sense to call Do without a prepared
 // interface instance.
 func (c *Client) Do(req *http.Request, v interface{}) error {
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	err = CheckResponseError(resp)
-	if err != nil {
-		return err
-	}
-
-	if v != nil {
-		decoder := json.NewDecoder(resp.Body)
-		err := decoder.Decode(&v)
+	var response error
+	for i := 0; i < c.MaxRetryAttempts; i++ {
+		resp, err := c.Client.Do(req)
 		if err != nil {
-			return err
+			response = err
+			continue
 		}
-	}
+		defer resp.Body.Close()
 
-	return nil
+		err = CheckResponseError(resp)
+		if err != nil {
+			// if we're hitting a retry error, wait before recalling.
+			if rle, ok := err.(RateLimitError); ok {
+				log.Printf("429 retry. waiting %d seconds", rle.RetryAfter)
+				time.Sleep(time.Duration(rle.RetryAfter) * time.Second)
+			}
+			response = err
+			continue
+		}
+
+		if v != nil {
+			decoder := json.NewDecoder(resp.Body)
+			err := decoder.Decode(&v)
+			if err != nil {
+				response = err
+				continue
+			}
+		}
+		return nil
+	}
+	return response
 }
 
 func wrapSpecificError(r *http.Response, err ResponseError) error {
