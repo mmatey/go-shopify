@@ -509,24 +509,37 @@ func (c *Client) GetPaging(path string, resource, options interface{}) (*Respons
 // response. It does not make much sense to call Do without a prepared
 // interface instance.
 func (c *Client) DoPaging(req *http.Request, v interface{}) (*ResponseMeta, error) {
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	err = CheckResponseError(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if v != nil {
-		decoder := json.NewDecoder(resp.Body)
-		err := decoder.Decode(&v)
+	var resp *http.Response
+	var err error
+	for i := 0; i < c.MaxRetryAttempts; i++ {
+		resp, err = c.Client.Do(req)
 		if err != nil {
-			return nil, err
+			continue
+		}
+		defer resp.Body.Close()
+
+		err = CheckResponseError(resp)
+		if err != nil {
+			// if we're hitting a retry error, wait before recalling.
+			if rle, ok := err.(RateLimitError); ok {
+				log.Printf("429 retry. waiting %d seconds", rle.RetryAfter)
+				time.Sleep(time.Duration(rle.RetryAfter) * time.Second)
+			}
+			continue
+		}
+
+		if v != nil {
+			decoder := json.NewDecoder(resp.Body)
+			err := decoder.Decode(&v)
+			if err != nil {
+				continue
+			}
 		}
 	}
+	if err != nil {
+		return nil, err
+	}
+
 	meta := new(ResponseMeta)
 	meta.ApiLimit = resp.Header.Get("X-Shopify-Shop-Api-Call-Limit")
 	links := link.ParseHeader(resp.Header)
