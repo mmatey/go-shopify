@@ -1,4 +1,4 @@
-module github.com/mmatey/go-shopify
+module github.com/bold-commerce/go-shopify
 
 go 1.12
 

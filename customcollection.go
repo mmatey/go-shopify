@@ -13,6 +13,7 @@ const customCollectionsResourceName = "collections"
 // See https://help.shopify.com/api/reference/customcollection
 type CustomCollectionService interface {
 	List(interface{}) ([]CustomCollection, error)
+	ListPage(interface{}) ([]CustomCollection, *ResponseMeta, error)
 	Count(interface{}) (int, error)
 	Get(int64, interface{}) (*CustomCollection, error)
 	Create(CustomCollection) (*CustomCollection, error)
@@ -61,6 +62,14 @@ func (s *CustomCollectionServiceOp) List(options interface{}) ([]CustomCollectio
 	resource := new(CustomCollectionsResource)
 	err := s.client.Get(path, resource, options)
 	return resource.Collections, err
+}
+
+// ListPage List inventory items - paging enabled
+func (s *CustomCollectionServiceOp) ListPage(options interface{}) ([]CustomCollection, *ResponseMeta, error) {
+	path := fmt.Sprintf("%s/%s.json", globalApiPathPrefix, customCollectionsBasePath)
+	resource := new(CustomCollectionsResource)
+	meta, err := s.client.GetPaging(path, resource, options)
+	return resource.Collections, meta, err
 }
 
 // Count custom collections

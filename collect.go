@@ -12,6 +12,7 @@ const collectsBasePath = "collects"
 // See: https://help.shopify.com/api/reference/products/collect
 type CollectService interface {
 	List(interface{}) ([]Collect, error)
+	ListPage(interface{}) ([]Collect, *ResponseMeta, error)
 	Count(interface{}) (int, error)
 }
 
@@ -49,6 +50,14 @@ func (s *CollectServiceOp) List(options interface{}) ([]Collect, error) {
 	resource := new(CollectsResource)
 	err := s.client.Get(path, resource, options)
 	return resource.Collects, err
+}
+
+// ListPage List collects - paging enabled
+func (s *CollectServiceOp) ListPage(options interface{}) ([]Collect, *ResponseMeta, error) {
+	path := fmt.Sprintf("%s/%s.json", globalApiPathPrefix, collectsBasePath)
+	resource := new(CollectsResource)
+	meta, err := s.client.GetPaging(path, resource, options)
+	return resource.Collects, meta, err
 }
 
 // Count collects
