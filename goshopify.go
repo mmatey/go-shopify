@@ -44,6 +44,9 @@ type Client struct {
 	// HTTP client used to communicate with the DO API.
 	Client *http.Client
 
+	// debug mode
+	debug bool
+
 	// App settings
 	app App
 
@@ -200,6 +203,13 @@ func WithVersion(apiVersion string) Option {
 	}
 }
 
+// WithDebug run in debug modee which displays the api urls called
+func WithDebug() Option {
+	return func(c *Client) {
+		c.debug = true
+	}
+}
+
 // WithMaxRetries optionally sets max retry attempts. Default retry attempts is 3.
 func WithMaxRetries(maxAttempts int) Option {
 	return func(c *Client) {
@@ -268,6 +278,9 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 func (c *Client) Do(req *http.Request, v interface{}) error {
 	var response error
 	for i := 0; i < c.MaxRetryAttempts; i++ {
+		if c.debug {
+			log.Printf("url: %s", req.URL)
+		}
 		resp, err := c.Client.Do(req)
 		if err != nil {
 			response = err
@@ -294,7 +307,7 @@ func (c *Client) Do(req *http.Request, v interface{}) error {
 				continue
 			}
 		}
-		return nil
+		break
 	}
 	return response
 }
@@ -512,6 +525,9 @@ func (c *Client) DoPaging(req *http.Request, v interface{}) (*ResponseMeta, erro
 	var resp *http.Response
 	var err error
 	for i := 0; i < c.MaxRetryAttempts; i++ {
+		if c.debug {
+			log.Printf("url: %s", req.URL)
+		}
 		resp, err = c.Client.Do(req)
 		if err != nil {
 			continue
@@ -535,6 +551,7 @@ func (c *Client) DoPaging(req *http.Request, v interface{}) (*ResponseMeta, erro
 				continue
 			}
 		}
+		break
 	}
 	if err != nil {
 		return nil, err
