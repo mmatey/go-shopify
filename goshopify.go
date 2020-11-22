@@ -264,7 +264,7 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 	c.InventoryLevel = &InventoryLevelServiceOp{client: c}
 	// apply any options
 
-	c.MaxRetryAttempts = 3
+	c.MaxRetryAttempts = 5
 	for _, opt := range opts {
 		opt(c)
 	}
