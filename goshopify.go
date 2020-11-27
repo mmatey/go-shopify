@@ -279,8 +279,9 @@ func (c *Client) Do(req *http.Request, v interface{}) error {
 	var response error
 	for i := 0; i < c.MaxRetryAttempts; i++ {
 		if c.debug {
-			log.Printf("url: %s", req.URL)
+			log.Printf("attempt: %d of %d url: %s", i, c.MaxRetryAttempts, req.URL)
 		}
+		response = nil
 		resp, err := c.Client.Do(req)
 		if err != nil {
 			response = err
@@ -526,7 +527,7 @@ func (c *Client) DoPaging(req *http.Request, v interface{}) (*ResponseMeta, erro
 	var err error
 	for i := 0; i < c.MaxRetryAttempts; i++ {
 		if c.debug {
-			log.Printf("url: %s", req.URL)
+			log.Printf("paging attempt: %d of %d url: %s", i, c.MaxRetryAttempts, req.URL)
 		}
 		resp, err = c.Client.Do(req)
 		if err != nil {
