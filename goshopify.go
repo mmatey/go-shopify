@@ -127,6 +127,15 @@ func (e ResponseDecodingError) Error() string {
 	return e.Message
 }
 
+// ResponsePermissionError occurs when the status code is 401 or 403
+type ResponsePermissionError struct {
+	Status int
+}
+
+func (e ResponsePermissionError) Error() string {
+	return strconv.Itoa(e.Status)
+}
+
 // An error specific to a rate-limiting response. Embeds the ResponseError to
 // allow consumers to handle it the same was a normal ResponseError.
 type RateLimitError struct {
@@ -291,6 +300,10 @@ func (c *Client) Do(req *http.Request, v interface{}) error {
 
 		err = CheckResponseError(resp)
 		if err != nil {
+			// if it's permissions, just fail fast
+			if _, ok := err.(ResponsePermissionError); ok {
+				return nil, err
+			}
 			// if we're hitting a retry error, wait before recalling.
 			if rle, ok := err.(RateLimitError); ok {
 				log.Printf("429 retry. waiting %d seconds", rle.RetryAfter)
@@ -330,6 +343,10 @@ func wrapSpecificError(r *http.Response, err ResponseError) error {
 func CheckResponseError(r *http.Response) error {
 	if r.StatusCode >= 200 && r.StatusCode < 300 {
 		return nil
+	}
+
+	if r.StatusCode == 401 || r.StatusCode == 403 {
+		return ResponsePermissionError{Status: r.StatusCode}
 	}
 
 	// Create an anonoymous struct to parse the JSON data into.
@@ -537,6 +554,10 @@ func (c *Client) DoPaging(req *http.Request, v interface{}) (*ResponseMeta, erro
 
 		err = CheckResponseError(resp)
 		if err != nil {
+			// if it's permissions, just fail fast
+			if _, ok := err.(ResponsePermissionError); ok {
+				return nil, err
+			}
 			// if we're hitting a retry error, wait before recalling.
 			if rle, ok := err.(RateLimitError); ok {
 				log.Printf("429 retry. waiting %d seconds", rle.RetryAfter)
