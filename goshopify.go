@@ -177,7 +177,9 @@ func (c *Client) NewRequest(method, urlStr string, body, options interface{}) (*
 	if body != nil {
 		js, err = json.Marshal(body)
 		if err != nil {
+			log.Printf("failed to marshal body %s %v", err, body)
 			return nil, err
+
 		}
 	}
 
