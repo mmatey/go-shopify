@@ -304,7 +304,7 @@ func (c *Client) Do(req *http.Request, v interface{}) error {
 		if err != nil {
 			// if it's permissions, just fail fast
 			if _, ok := err.(ResponsePermissionError); ok {
-				return nil, err
+				return err
 			}
 			// if we're hitting a retry error, wait before recalling.
 			if rle, ok := err.(RateLimitError); ok {
